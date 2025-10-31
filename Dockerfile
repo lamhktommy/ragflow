@@ -9,7 +9,19 @@ ENV LIGHTEN=${LIGHTEN}
 
 WORKDIR /ragflow
 
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=HTTP_PROXY
+
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+
 # Copy models downloaded via download_deps.py
+RUN RUN set -eux; \
+    if [ -n "${HTTP_PROXY}" ] || [ -n "${HTTPS_PROXY}" ]; then \
+      : > /etc/apt/apt.conf.d/99proxy; \
+      if [ -n "${HTTP_PROXY}" ]; then printf 'Acquire::http::Proxy "%s";\n' "${HTTP_PROXY}" >> /etc/apt/apt.conf.d/99proxy; fi; \
+      if [ -n "${HTTPS_PROXY}" ]; then printf 'Acquire::https::Proxy "%s";\n' "${HTTPS_PROXY}" >> /etc/apt/apt.conf.d/99proxy; fi; \
+    fi;
 RUN mkdir -p /ragflow/rag/res/deepdoc /root/.ragflow
 RUN --mount=type=bind,from=infiniflow/ragflow_deps:latest,source=/huggingface.co,target=/huggingface.co \
     cp /huggingface.co/InfiniFlow/huqie/huqie.txt.trie /ragflow/rag/res/ && \
